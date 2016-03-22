@@ -133,7 +133,7 @@
                         <version>${plugin.resources.version}</version>
                         <executions>
                             <execution>
-                                <id>copy-test-resources</id>
+                                <id>copy-test-jar</id>
                                 <phase>pre-integration-test</phase>
                                 <goals>
                                     <goal>copy-resources</goal>
@@ -152,6 +152,23 @@
                                     <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>copy-test-classes</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.testOutputDirectory}</directory>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}/activiti-app/WEB-INF/classes</outputDirectory>
+                                    <overwrite>true</overwrite>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                     <plugin>
@@ -163,7 +180,6 @@
                             <warDirectory>${project.build.directory}/activiti-app</warDirectory>
                             <port>9999</port>
                             <protocol>org.apache.coyote.http11.Http11NioProtocol</protocol>
-                            <additionalClasspathDirs>${project.build.testOutputDirectory}</additionalClasspathDirs>
                             <systemProperties>
                                 <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
                                 <datasource.driver>org.h2.Driver</datasource.driver>
@@ -175,8 +191,7 @@
                                 <ldap.authentication.enabled>false</ldap.authentication.enabled>
                                 <ldap.synchronization.full.enabled>false</ldap.synchronization.full.enabled>
                                 <ldap.synchronization.differential.enabled>false</ldap.synchronization.differential.enabled>
-                                <log4j.configuration>log4j-dev.properties</log4j.configuration>
-                                <additional.configuration>${project.build.testOutputDirectory}</additional.configuration>
+                                <log4j.configuration>log4j-app-dev.properties</log4j.configuration>
                             </systemProperties>
                             <ignorePackaging>true</ignorePackaging>
                         </configuration>
