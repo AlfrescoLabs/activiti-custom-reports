@@ -63,7 +63,6 @@
             <groupId>com.activiti</groupId>
             <artifactId>activiti-app-logic</artifactId>
             <version>${activiti.app.version}</version>
-            <type>pom</type>
         </dependency>
         
         <dependency>
