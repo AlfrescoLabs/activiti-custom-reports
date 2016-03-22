@@ -22,6 +22,7 @@
         <plugin.eclipse.version>2.9</plugin.eclipse.version>
         <plugin.tomcat.version>2.2</plugin.tomcat.version>
         <plugin.dependency.version>2.10</plugin.dependency.version>
+        <plugin.resources.version>2.7</plugin.resources.version>
     </properties>
     
     <repositories>
@@ -123,6 +124,32 @@
                                         </artifactItem>
                                     </artifactItems>
                                     <excludes>**/activiti*-dev*.properties</excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>${plugin.resources.version}</version>
+                        <executions>
+                            <execution>
+                                <id>copy-test-resources</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.build.directory}</directory>
+                                            <includes>
+                                                <include>*.jar</include>
+                                            </includes>
+                                            <filtering>false</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${project.build.directory}/activiti-app/WEB-INF/lib</outputDirectory>
+                                    <overwrite>true</overwrite>
                                 </configuration>
                             </execution>
                         </executions>
