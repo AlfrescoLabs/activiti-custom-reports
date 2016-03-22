@@ -188,9 +188,6 @@
                                 <datasource.username>alfresco</datasource.username>
                                 <datasource.password>alfresco</datasource.password>
                                 <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
-                                <ldap.authentication.enabled>false</ldap.authentication.enabled>
-                                <ldap.synchronization.full.enabled>false</ldap.synchronization.full.enabled>
-                                <ldap.synchronization.differential.enabled>false</ldap.synchronization.differential.enabled>
                                 <log4j.configuration>log4j-app-dev.properties</log4j.configuration>
                             </systemProperties>
                             <ignorePackaging>true</ignorePackaging>
