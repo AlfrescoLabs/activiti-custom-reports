@@ -20,6 +20,8 @@
         
         <!-- Plugin versions -->
         <plugin.eclipse.version>2.9</plugin.eclipse.version>
+        <plugin.tomcat.version>2.2</plugin.tomcat.version>
+        <plugin.dependency.version>2.10</plugin.dependency.version>
     </properties>
     
     <repositories>
@@ -89,5 +91,82 @@
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>run-war</id>
+            <properties>
+                <test.datadir>${project.build.directory}/data</test.datadir>
+                <test.h2.params>;AUTO_SERVER=TRUE;DB_CLOSE_ON_EXIT=FALSE;LOCK_TIMEOUT=10000;MVCC=FALSE;LOCK_MODE=0</test.h2.params>
+                <test.h2.url>jdbc:h2:${test.datadir}/h2_data${test.h2.params}</test.h2.url>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <version>${plugin.dependency.version}</version>
+                        <executions>
+                            <execution>
+                                <id>unpack-war</id>
+                                <phase>pre-integration-test</phase>
+                                <goals>
+                                    <goal>unpack</goal>
+                                </goals>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/activiti-app</outputDirectory>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>com.activiti</groupId>
+                                            <artifactId>activiti-app</artifactId>
+                                            <type>war</type>
+                                            <version>${activiti.app.version}</version>
+                                        </artifactItem>
+                                    </artifactItems>
+                                    <excludes>**/activiti*-dev*.properties</excludes>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.tomcat.maven</groupId>
+                        <artifactId>tomcat7-maven-plugin</artifactId>
+                        <version>${plugin.tomcat.version}</version>
+                        <configuration>
+                            <path>/activiti-app</path>
+                            <warDirectory>${project.build.directory}/activiti-app</warDirectory>
+                            <port>9999</port>
+                            <protocol>org.apache.coyote.http11.Http11NioProtocol</protocol>
+                            <additionalClasspathDirs>${project.build.testOutputDirectory}</additionalClasspathDirs>
+                            <systemProperties>
+                                <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
+                                <datasource.driver>org.h2.Driver</datasource.driver>
+                                <!-- <datasource.url>jdbc:h2:tcp://localhost:9092/activiti</datasource.url> -->
+                                <datasource.url>${test.h2.url}</datasource.url>
+                                <datasource.username>alfresco</datasource.username>
+                                <datasource.password>alfresco</datasource.password>
+                                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
+                                <ldap.authentication.enabled>false</ldap.authentication.enabled>
+                                <ldap.synchronization.full.enabled>false</ldap.synchronization.full.enabled>
+                                <ldap.synchronization.differential.enabled>false</ldap.synchronization.differential.enabled>
+                                <log4j.configuration>log4j-dev.properties</log4j.configuration>
+                                <additional.configuration>${project.build.testOutputDirectory}</additional.configuration>
+                            </systemProperties>
+                            <ignorePackaging>true</ignorePackaging>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>run-tomcat</id>
+                                <phase>integration-test</phase>
+                                <goals>
+                                    <goal>run-war</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
 </project>
