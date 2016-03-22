@@ -162,7 +162,7 @@
                                     <resources>
                                         <resource>
                                             <directory>${project.build.testOutputDirectory}</directory>
-                                            <filtering>false</filtering>
+                                            <filtering>true</filtering>
                                         </resource>
                                     </resources>
                                     <outputDirectory>${project.build.directory}/activiti-app/WEB-INF/classes</outputDirectory>
@@ -182,12 +182,6 @@
                             <protocol>org.apache.coyote.http11.Http11NioProtocol</protocol>
                             <systemProperties>
                                 <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
-                                <datasource.driver>org.h2.Driver</datasource.driver>
-                                <!-- <datasource.url>jdbc:h2:tcp://localhost:9092/activiti</datasource.url> -->
-                                <datasource.url>${test.h2.url}</datasource.url>
-                                <datasource.username>alfresco</datasource.username>
-                                <datasource.password>alfresco</datasource.password>
-                                <hibernate.dialect>org.hibernate.dialect.H2Dialect</hibernate.dialect>
                                 <log4j.configuration>log4j-app-dev.properties</log4j.configuration>
                             </systemProperties>
                             <ignorePackaging>true</ignorePackaging>
