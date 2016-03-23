@@ -40,7 +40,7 @@ public class CustomVariablesReportGenerator extends AbstractReportGenerator {
     public static final String ID = "report.generator.fruitorders";
     public static final String NAME = "Fruit orders overview";
 
-    private static String PROCESS_DEFINITION_KEY = "Orderprocess";
+    private static String PROCESS_DEFINITION_KEY = "fruitorderprocess";
 
     @Override
     public String getID() {

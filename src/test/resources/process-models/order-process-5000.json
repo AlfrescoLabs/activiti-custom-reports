@@ -1,0 +1,26 @@
+{
+  "startForm": {
+    "id": 5001
+  },
+  "steps": [
+    {
+      "assignment": {
+        "initiatorCanCompleteTask": true,
+        "type": "user"
+      },
+      "dueAction": "none",
+      "formDefinition": {
+        "id": 5001
+      },
+      "id": "human-step-1425739251572-662",
+      "name": "Ad hoc Task",
+      "overdueSteps": [],
+      "taskDueDateField": {
+        "id": "duedate",
+        "name": "Due Date"
+      },
+      "taskDueDateOption": "field",
+      "type": "human-step"
+    }
+  ]
+}

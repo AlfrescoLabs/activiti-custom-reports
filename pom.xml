@@ -23,6 +23,7 @@
         <plugin.tomcat.version>2.2</plugin.tomcat.version>
         <plugin.dependency.version>2.10</plugin.dependency.version>
         <plugin.resources.version>2.7</plugin.resources.version>
+        <plugin.jar.version>2.6</plugin.jar.version>
     </properties>
     
     <repositories>
@@ -129,6 +130,18 @@
                         </executions>
                     </plugin>
                     <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>${plugin.jar.version}</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>test-jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
                         <artifactId>maven-resources-plugin</artifactId>
                         <version>${plugin.resources.version}</version>
                         <executions>
@@ -162,6 +175,10 @@
                                     <resources>
                                         <resource>
                                             <directory>${project.build.testOutputDirectory}</directory>
+                                            <!-- Test classes must be in a JAR for component scanning to work -->
+                                            <excludes>
+                                                <exclude>**/*.class</exclude>
+                                            </excludes>
                                             <filtering>true</filtering>
                                         </resource>
                                     </resources>
