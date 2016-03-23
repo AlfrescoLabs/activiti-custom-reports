@@ -27,7 +27,7 @@
     
     <repositories>
         <repository>
-            <id>alfresco.release.repo</id>
+            <id>activiti-enterprise-releases</id>
             <releases>
                 <enabled>true</enabled>
             </releases>

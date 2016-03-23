@@ -6,9 +6,11 @@ This project provides an example report which displays some custom charts based 
 Prerequisites
 ---
 
-This project is built against Activiti Enterprise artifacts and assumes that you have configured access to these in your `.m2/settings.xml` file.
+This project is built against Activiti Enterprise artifacts and assumes that you have access to these via Maven.
 
-The provided pom file defines the repositories on `artifacts.alfresco.com` but you will need to have some credentials configured for these.
+The provided pom file references the required Enterprise repositories on `artifacts.alfresco.com` but you will need to have some credentials configured for these in your `.m2/settings.xml` file. The repository IDs are `activiti-enterprise-releases` and `activiti-enterprise-snapshots`.
+
+In order to run the tests and the Activiti BPM Suite WAR you will also need a valid Activiti license installed in the directory `$HOME/.activiti/enterprise-license`.
 
 Building, Testing, Running
 ---
