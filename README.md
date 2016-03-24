@@ -16,7 +16,7 @@ Building, Testing, Running
 ---
 To build the JAR file via Maven
 
-    mvn clean package
+    mvn clean install
 
 A basic set of integration tests will be run. If you want to disable these then you can do so via the standard `-DskipTests` method.
 
