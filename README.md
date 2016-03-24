@@ -8,7 +8,7 @@ Prerequisites
 
 This project is built against Activiti Enterprise artifacts and assumes that you have access to these via Maven.
 
-The provided pom file references the required Enterprise repositories on `artifacts.alfresco.com` but you will need to have some credentials configured for these in your `.m2/settings.xml` file. The repository IDs are `activiti-enterprise-releases` and `activiti-enterprise-snapshots`.
+The provided pom file references the required Enterprise repositories on `artifacts.alfresco.com` but you will need to have some [credentials configured](https://maven.apache.org/guides/mini/guide-encryption.html) for these in your `.m2/settings.xml` file. The repository IDs are `activiti-enterprise-releases` and `activiti-enterprise-snapshots`.
 
 In order to run the tests and the Activiti BPM Suite WAR you will also need a valid Activiti license installed in the directory `$HOME/.activiti/enterprise-license`.
 
