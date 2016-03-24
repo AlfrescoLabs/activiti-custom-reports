@@ -3,6 +3,8 @@ Example Custom Reports for Activiti BPM Suite
 
 This project provides an example report which displays some custom charts based on variables, for an example process.
 
+![Fruit orders overview](src/site/fruit-orders-overview.png)
+
 Prerequisites
 ---
 
