@@ -1,0 +1,27 @@
+[
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "duedate",
+    "dateValue": "2016-03-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "duedate",
+    "dateValue": "2016-03-02"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "duedate",
+    "dateValue": "2016-04-26"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "duedate",
+    "dateValue": "2016-05-12"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "duedate",
+    "dateValue": "2016-05-13"
+  }
+]

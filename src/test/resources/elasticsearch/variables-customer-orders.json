@@ -1,0 +1,38 @@
+[
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Anne",
+    "createTime": "2016-03-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Bob's Store",
+    "createTime": "2016-03-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Bob's Store",
+    "createTime": "2016-04-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Debbie Dolores",
+    "createTime": "2016-04-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Debbie Dolores",
+    "createTime": "2016-04-02"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "customername",
+    "stringValue": "Charlie Brown",
+    "createTime": "2016-03-01"
+  }
+]

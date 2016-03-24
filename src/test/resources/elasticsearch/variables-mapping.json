@@ -1,0 +1,35 @@
+{
+  "variables": {
+    "properties": {
+      "createTime": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "dateValue": {
+        "type": "date",
+        "format": "dateOptionalTime"
+      },
+      "longValue": {
+        "type": "long"
+      },
+      "name": {
+        "type": "string",
+        "fields": {
+          "_exact_name": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      },
+      "stringValue": {
+        "type": "string",
+        "fields": {
+          "_exact_string_value": {
+            "type": "string",
+            "index": "not_analyzed"
+          }
+        }
+      }
+    }
+  }
+}

@@ -11,12 +11,15 @@
     <properties>
         <!-- Maven build properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.7</java.version>
 
         <!-- Libraries versions -->
         <activiti.app.version>1.5.0-SNAPSHOT</activiti.app.version>
         <activiti.version>5.19.0.3</activiti.version>
         <h2.version>1.3.176</h2.version>
+        <spring.version>4.1.6.RELEASE</spring.version>
+        <junit.version>4.11</junit.version>
         
         <!-- Plugin versions -->
         <plugin.eclipse.version>2.9</plugin.eclipse.version>
@@ -24,6 +27,7 @@
         <plugin.dependency.version>2.10</plugin.dependency.version>
         <plugin.resources.version>2.7</plugin.resources.version>
         <plugin.jar.version>2.6</plugin.jar.version>
+        <plugin.failsafe.version>2.19.1</plugin.failsafe.version>
     </properties>
     
     <repositories>
@@ -73,10 +77,31 @@
             <version>${h2.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <version>${spring.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <!-- BUILD -->
     <build>
+
+        <testResources>
+            <testResource>
+                <directory>src/test/resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
 
         <plugins>
             <plugin>
@@ -86,6 +111,25 @@
                 <configuration>
                     <downloadSources>true</downloadSources>
                     <downloadJavadocs>true</downloadJavadocs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>${plugin.failsafe.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <systemProperties>
+                        <log4j.configuration>log4j-test.properties</log4j.configuration>
+                    </systemProperties>
                 </configuration>
             </plugin>
 
@@ -178,6 +222,7 @@
                                             <!-- Test classes must be in a JAR for component scanning to work -->
                                             <excludes>
                                                 <exclude>**/*.class</exclude>
+                                                <exclude>elasticsearch.yml</exclude>
                                             </excludes>
                                             <filtering>true</filtering>
                                         </resource>

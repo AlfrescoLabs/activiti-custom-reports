@@ -1,0 +1,32 @@
+[
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "quantity",
+    "longValue": 31,
+    "createTime": "2016-03-01"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "quantity",
+    "longValue": 2,
+    "createTime": "2016-03-02"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "quantity",
+    "longValue": 6,
+    "createTime": "2016-04-26"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "quantity",
+    "longValue": 18,
+    "createTime": "2016-05-12"
+  },
+  {
+    "processDefinitionKey": "fruitorderprocess",
+    "name": "quantity",
+    "longValue": 21,
+    "createTime": "2016-05-13"
+  }
+]
