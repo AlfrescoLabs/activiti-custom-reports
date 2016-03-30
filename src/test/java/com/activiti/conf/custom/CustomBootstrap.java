@@ -80,14 +80,7 @@ public class CustomBootstrap implements BootstrapConfigurer {
                     }
                 }
 
-                User adminUser = null;
-                List<User> userResults = userRepository.findUsersWithCapability(Capabilities.TENANT_MGMT);
-                if (userResults.size() == 0) {
-                    userResults = userRepository.findUsersWithCapability(Capabilities.TENANT_ADMIN);
-                }
-                if (userResults.size() > 0) {
-                    adminUser = userResults.get(0);
-                }
+                User adminUser = findAdminUser();
 
                 if (adminUser == null) {
                     log.error("Could not find admin user so skipping Custom App initialization");
@@ -162,6 +155,18 @@ public class CustomBootstrap implements BootstrapConfigurer {
 
     @Autowired
     protected ObjectMapper objectMapper;
+
+    protected User findAdminUser() {
+        User adminUser = null;
+        List<User> userResults = userRepository.findUsersWithCapability(Capabilities.TENANT_MGMT);
+        if (userResults.size() == 0) {
+            userResults = userRepository.findUsersWithCapability(Capabilities.TENANT_ADMIN);
+        }
+        if (userResults.size() > 0) {
+            adminUser = userResults.get(0);
+        }
+        return adminUser;
+    }
 
     protected Model createProcessModelAndUpdateIds(List<ModelJsonAndStepIdRelation> models, String processName, String processJsonFileName, User adminUser) {
         Map<Long, Model> modelIdMap = new HashMap<Long, Model>();
