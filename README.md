@@ -26,3 +26,4 @@ To run the Activiti BPM Suite with the JAR file customisations applied, use the 
 
     mvn clean install -Prun-war
 
+This will start up an instance of Tomcat running on port 9999 on your local machine. To get to the Activiti BPM suite, navigate to `http://localhost:9999/activiti-app` in your web browser. You can log in using the username `admin` and password `k1ngk0ng`.
