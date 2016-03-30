@@ -25,6 +25,7 @@ import com.activiti.service.api.DeploymentService;
 import com.activiti.service.editor.KickstartModelService;
 import com.activiti.service.editor.KickstartModelStorageHandler;
 import com.activiti.service.editor.ModelInternalService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -41,6 +42,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -98,30 +100,20 @@ public class CustomBootstrap implements BootstrapConfigurer {
 
                 appDefinition.setModels(appModels);
 
-                Date now = new Date();
-                Model appModel = new Model();
-                appModel.setVersion(1);
-                appModel.setName(APP_NAME);
-                appModel.setModelType(Model.MODEL_TYPE_APP);
-                appModel.setCreated(now);
-                appModel.setCreatedBy(adminUser);
-                appModel.setDescription(APP_DESCRIPTION);
-                appModel.setLastUpdated(now);
-                appModel.setLastUpdatedBy(adminUser);
-                appModel.setTenantId(adminUser.getTenantId());
-
                 try {
-                    appModel.setModelEditorJson(objectMapper.writeValueAsString(appDefinition));
-                } catch (Exception e) {
-                    log.error("Error creating app definition", e);
-                    return null;
-                }
-                modelRepository.save(appModel);
+                    Model appModel = createAndSaveModelArtifactWithJson(APP_NAME,
+                            APP_DESCRIPTION,
+                            appDefinition,
+                            null,
+                            Model.MODEL_TYPE_APP,
+                            adminUser);
 
-                modelService.createNewModelVersion(appModel, "Initial setup", adminUser);
-                List<Long> modelIds = new ArrayList<Long>();
-                modelIds.add(appModel.getId());
-                deploymentService.deployAppDefinitions(modelIds, adminUser);
+                    modelService.createNewModelVersion(appModel, "Initial setup", adminUser);
+                    deploymentService.deployAppDefinitions(Collections.singletonList(appModel.getId()), adminUser);
+
+                } catch (JsonProcessingException e) {
+                    log.error("Error creating app definition", e);
+                }
 
                 return null;
             }
@@ -179,7 +171,7 @@ public class CustomBootstrap implements BootstrapConfigurer {
     protected Model createProcessModelAndUpdateIds(List<ModelJsonAndStepIdRelation> models, String processName, String processJsonFileName, User adminUser) {
         Map<Long, Model> modelIdMap = new HashMap<Long, Model>();
         for (ModelJsonAndStepIdRelation modelRelation : models) {
-            Model formModel = createModelArtifact(modelRelation.getName(), modelRelation.getJsonFileName(), Model.MODEL_TYPE_FORM, adminUser);
+            Model formModel = createAndSaveModelArtifact(modelRelation.getName(), null, modelRelation.getJsonFileName(), Model.MODEL_TYPE_FORM, adminUser);
             modelIdMap.put(modelRelation.getModelId(), formModel);
         }
 
@@ -193,7 +185,7 @@ public class CustomBootstrap implements BootstrapConfigurer {
             }
             updateFormReferences(modelDefinition.getSteps(), modelIdMap);
             processJson = storageHandler.getDefinitionStorageString(modelDefinition);
-            processModel = createModelArtifactWithJson(processName, processJson, thumbnail, Model.MODEL_TYPE_KICKSTART, adminUser);
+            processModel = createAndSaveModelArtifactWithJson(processName, null, processJson, thumbnail, Model.MODEL_TYPE_KICKSTART, adminUser);
             for (Model formModel : modelIdMap.values()) {
                 formModel.setReferenceId(processModel.getId());
                 modelRepository.save(formModel);
@@ -243,11 +235,11 @@ public class CustomBootstrap implements BootstrapConfigurer {
         }
     }
 
-    protected Model createModelArtifact(String name, String filename, int modelType, User adminUser) {
+    protected Model createAndSaveModelArtifact(String name, String description, String filename, int modelType, User adminUser) {
         try {
             String json = getModelAsString(filename);
             byte[] thumbnail = getThumbnailBytes(filename);
-            return createModelArtifactWithJson(name, json, thumbnail, modelType, adminUser);
+            return createAndSaveModelArtifactWithJson(name, description, json, thumbnail, modelType, adminUser);
         } catch (Exception e) {
             log.error("Error creating model artifact definition " + filename, e);
             return null;
@@ -267,7 +259,7 @@ public class CustomBootstrap implements BootstrapConfigurer {
         return thumbnail;
     }
 
-    protected Model createModelArtifactWithJson(String name, String json, byte[] thumbnail, int modelType, User user) {
+    protected Model createAndSaveModelArtifactWithJson(String name, String description, String json, byte[] thumbnail, int modelType, User user) {
         Date now = new Date();
         Model model = new Model();
         model.setVersion(1);
@@ -275,12 +267,19 @@ public class CustomBootstrap implements BootstrapConfigurer {
         model.setModelType(modelType);
         model.setCreated(now);
         model.setCreatedBy(user);
+        model.setDescription(description);
         model.setLastUpdated(now);
         model.setLastUpdatedBy(user);
         model.setModelEditorJson(json);
         model.setThumbnail(thumbnail);
         model.setTenantId(user.getTenantId());
         return modelService.saveModel(model);
+    }
+
+    protected Model createAndSaveModelArtifactWithJson(String name, String description, Object jsonObject, byte[] thumbnail, int modelType, User user)
+        throws JsonProcessingException
+    {
+        return createAndSaveModelArtifactWithJson(name, description, objectMapper.writeValueAsString(jsonObject), thumbnail, modelType, user);
     }
 
     protected AppModelDefinition createAppModelDefinition(Model model) {
