@@ -54,6 +54,8 @@ import java.util.Map;
 @Component
 public class CustomBootstrap implements BootstrapConfigurer {
 
+    private final static String APP_NAME = "Fruit Orders";
+
     private final Logger log = LoggerFactory.getLogger(CustomBootstrap.class);
 
     public void applicationContextInitialized(ApplicationContext applicationContext) {
@@ -65,9 +67,11 @@ public class CustomBootstrap implements BootstrapConfigurer {
 
             public Void doInTransaction(TransactionStatus status) {
                 List<Model> dataAppModels = modelRepository.findModelsByModelTypeAndReferenceIdOrNullReferenceId(Model.MODEL_TYPE_APP, 1L);
-                if (CollectionUtils.isNotEmpty(dataAppModels)) {
-                    log.info("The database already contains an app so skipping Custom App initialization");
-                    return null;
+                for (Model model : dataAppModels) {
+                    if (model.getName().equals(APP_NAME)) {
+                        log.info("The database already contains an app of the same name so skipping Custom App initialization");
+                        return null;
+                    }
                 }
 
                 User adminUser = null;
@@ -99,7 +103,7 @@ public class CustomBootstrap implements BootstrapConfigurer {
 
                 Model appModel = new Model();
                 appModel.setVersion(1);
-                appModel.setName("Fruit Orders");
+                appModel.setName(APP_NAME);
                 appModel.setModelType(Model.MODEL_TYPE_APP);
                 appModel.setCreated(new Date());
                 appModel.setCreatedBy(adminUser);
