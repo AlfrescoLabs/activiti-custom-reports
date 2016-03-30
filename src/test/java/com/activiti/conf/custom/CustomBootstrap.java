@@ -55,6 +55,12 @@ import java.util.Map;
 public class CustomBootstrap implements BootstrapConfigurer {
 
     private final static String APP_NAME = "Fruit Orders";
+    private final static String APP_DESCRIPTION = "Fruit Orders app";
+    private final static String APP_ICON = "glyphicon-file";
+    private final static String APP_THEME = "theme-8";
+
+    private final String PROCESS_NAME = "Fruit order process";
+    private final String FORM_NAME = "Order form";
 
     private final Logger log = LoggerFactory.getLogger(CustomBootstrap.class);
 
@@ -89,26 +95,27 @@ public class CustomBootstrap implements BootstrapConfigurer {
                 }
 
                 AppDefinition appDefinition = new AppDefinition();
-                appDefinition.setIcon("glyphicon-file");
-                appDefinition.setTheme("theme-8");
+                appDefinition.setIcon(APP_ICON);
+                appDefinition.setTheme(APP_THEME);
 
                 List<AppModelDefinition> appModels = new ArrayList<AppModelDefinition>();
 
                 List<ModelJsonAndStepIdRelation> modelRelationList = new ArrayList<ModelJsonAndStepIdRelation>();
-                modelRelationList.add(new ModelJsonAndStepIdRelation("Order form", "form-models/begin-order-5001.json"));
-                Model adhocModel = createProcessModelAndUpdateIds(modelRelationList, "Fruit order process", "process-models/order-process-5000.json", adminUser);
+                modelRelationList.add(new ModelJsonAndStepIdRelation(FORM_NAME, "form-models/begin-order-5001.json"));
+                Model adhocModel = createProcessModelAndUpdateIds(modelRelationList, PROCESS_NAME, "process-models/order-process-5000.json", adminUser);
                 appModels.add(createAppModelDefinition(adhocModel));
 
                 appDefinition.setModels(appModels);
 
+                Date now = new Date();
                 Model appModel = new Model();
                 appModel.setVersion(1);
                 appModel.setName(APP_NAME);
                 appModel.setModelType(Model.MODEL_TYPE_APP);
-                appModel.setCreated(new Date());
+                appModel.setCreated(now);
                 appModel.setCreatedBy(adminUser);
-                appModel.setDescription("Fruit Orders app");
-                appModel.setLastUpdated(new Date());
+                appModel.setDescription(APP_DESCRIPTION);
+                appModel.setLastUpdated(now);
                 appModel.setLastUpdatedBy(adminUser);
                 appModel.setTenantId(adminUser.getTenantId());
 
@@ -248,13 +255,14 @@ public class CustomBootstrap implements BootstrapConfigurer {
     }
 
     protected Model createModelArtifactWithJson(String name, String json, byte[] thumbnail, int modelType, User user) {
+        Date now = new Date();
         Model model = new Model();
         model.setVersion(1);
         model.setName(name);
         model.setModelType(modelType);
-        model.setCreated(new Date());
+        model.setCreated(now);
         model.setCreatedBy(user);
-        model.setLastUpdated(new Date());
+        model.setLastUpdated(now);
         model.setLastUpdatedBy(user);
         model.setModelEditorJson(json);
         model.setThumbnail(thumbnail);
