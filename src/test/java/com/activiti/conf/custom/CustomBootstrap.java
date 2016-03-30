@@ -72,12 +72,10 @@ public class CustomBootstrap implements BootstrapConfigurer {
         transactionTemplate.execute(new TransactionCallback<Void>() {
 
             public Void doInTransaction(TransactionStatus status) {
-                List<Model> dataAppModels = modelRepository.findModelsByModelTypeAndReferenceIdOrNullReferenceId(Model.MODEL_TYPE_APP, 1L);
-                for (Model model : dataAppModels) {
-                    if (model.getName().equals(APP_NAME)) {
-                        log.info("The database already contains an app of the same name so skipping Custom App initialization");
-                        return null;
-                    }
+
+                if (findAppWithName(APP_NAME) != null) {
+                    log.info("The database already contains an app of the same name so skipping Custom App initialization");
+                    return null;
                 }
 
                 User adminUser = findAdminUser();
@@ -166,6 +164,16 @@ public class CustomBootstrap implements BootstrapConfigurer {
             adminUser = userResults.get(0);
         }
         return adminUser;
+    }
+
+    protected Model findAppWithName(String appName) {
+        List<Model> dataAppModels = modelRepository.findModelsByModelTypeAndReferenceIdOrNullReferenceId(Model.MODEL_TYPE_APP, 1L);
+        for (Model model : dataAppModels) {
+            if (model.getName().equalsIgnoreCase(appName)) {
+                return model;
+            }
+        }
+        return null;
     }
 
     protected Model createProcessModelAndUpdateIds(List<ModelJsonAndStepIdRelation> models, String processName, String processJsonFileName, User adminUser) {
