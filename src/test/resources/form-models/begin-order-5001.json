@@ -174,7 +174,6 @@
             "col": -1,
             "visibilityCondition": null,
             "endpoint": null,
-            "dataSource": null,
             "requestHeaders": null
           },
           {
