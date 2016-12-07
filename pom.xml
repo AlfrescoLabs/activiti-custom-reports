@@ -14,6 +14,9 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>1.7</java.version>
 
+        <!-- Runtime properties -->
+        <tomcat.port>9999</tomcat.port>
+
         <!-- Libraries versions -->
         <activiti.app.version>1.5.0</activiti.app.version>
         <activiti.version>5.19.0.3</activiti.version>
@@ -240,7 +243,7 @@
                         <configuration>
                             <path>/activiti-app</path>
                             <warDirectory>${project.build.directory}/activiti-app</warDirectory>
-                            <port>9999</port>
+                            <port>${tomcat.port}</port>
                             <protocol>org.apache.coyote.http11.Http11NioProtocol</protocol>
                             <systemProperties>
                                 <com.sun.management.jmxremote.port>4000</com.sun.management.jmxremote.port>
