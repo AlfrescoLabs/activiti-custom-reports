@@ -1,43 +1,45 @@
 package com.activiti.service.reporting.example;
 
-import com.activiti.test.CustomApplicationTestConfiguration;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
-import org.elasticsearch.action.admin.indices.delete.DeleteIndexResponse;
-import org.elasticsearch.action.admin.indices.flush.FlushRequest;
-import org.elasticsearch.action.admin.indices.refresh.RefreshRequest;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
+import com.activiti.domain.idm.User;
+import com.activiti.service.api.ReportingIndexManager;
+import com.activiti.service.reporting.ReportingIndexManagerImpl;
+import com.activiti.service.reporting.searchClient.AnalyticsClient;
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
+import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.message.BasicHeader;
+import org.apache.http.nio.protocol.HttpAsyncRequestProducer;
+import org.apache.http.nio.protocol.HttpAsyncResponseConsumer;
+import org.apache.http.protocol.HttpContext;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
+import org.elasticsearch.client.CustomApplicationTestConfiguration;
+import org.elasticsearch.search.aggregations.bucket.histogram.Histogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.ParsedDateHistogram;
 import org.elasticsearch.search.aggregations.bucket.terms.Terms;
-import org.elasticsearch.search.aggregations.metrics.sum.Sum;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONTokener;
-import org.junit.After;
+import org.elasticsearch.search.aggregations.metrics.Sum;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.FileReader;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Future;
 
-import static com.activiti.service.reporting.ElasticSearchConstants.TYPE_VARIABLES;
+import static com.activiti.service.reporting.generators.ElasticSearchConstants.INDEX_VARIABLES;
+import static org.apache.http.HttpHeaders.CONTENT_TYPE;
+import static org.apache.http.HttpHeaders.WARNING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.*;
 
 /**
  * @author Will Abson
@@ -48,48 +50,55 @@ import static org.junit.Assert.assertNotNull;
 public class CustomVariablesReportGeneratorIT {
 
     @Autowired
-    CustomVariablesReportGenerator reportGenerator;
+    private CustomVariablesReportGenerator reportGenerator;
 
-    @Value("classpath:/elasticsearch/variables-mapping.json")
-    Resource variablesMappingJson;
+    @Autowired
+    private AnalyticsClient analyticsClient;
+
+    @Autowired
+    private CloseableHttpAsyncClient httpClient;
+
+    private ReportingIndexManager indexManager = mock(ReportingIndexManagerImpl.class);
+
+    @Autowired
+    private User currentUser;
+
+    @Value("classpath:/elasticsearch/variables-count-orders-by-customer-month.json")
+    private Resource variablesCountOrdersByCustomerAndMonthJson;
 
     @Value("classpath:/elasticsearch/variables-customer-orders.json")
-    Resource customerOrdersJson;
+    private Resource customerOrdersJson;
 
     @Value("classpath:/elasticsearch/variables-quantities-by-month.json")
-    Resource quantitiesByMonthJson;
+    private Resource quantitiesByMonthJson;
 
     @Value("classpath:/elasticsearch/variables-orders-by-duedate.json")
-    Resource ordersByDueDateJson;
-
-    Node node;
-    Client client;
+    private Resource ordersByDueDateJson;
 
     private static final String INDEX_NAME = "activiti-test";
 
-    private static final Logger logger = LoggerFactory.getLogger(CustomVariablesReportGeneratorIT.class);
-
     @Before
     public void before() {
-        node = NodeBuilder.nodeBuilder().local(true).node();
-        client = node.client();
+        doReturn(INDEX_NAME)
+                .when(indexManager)
+                .getIndexForUser(eq(currentUser), eq(INDEX_VARIABLES));
     }
 
     @Test
-    public void testCustomerOrderCountsSearch() throws IOException, JSONException {
+    public void testCustomerOrderCountsSearch() throws Exception {
+        mockElasticSearchRequest(customerOrdersJson);
 
-        createIndexAndRefresh();
-        addEntriesAndFlush(customerOrdersJson);
+        SearchResponse response = reportGenerator.search(analyticsClient,
+                                                         indexManager,
+                                                         currentUser,
+                                                         reportGenerator.customerOrderCountsQuery());
 
-        SearchResponse resp = reportGenerator.executeCustomerOrderCountsSearch(client, INDEX_NAME);
-
-        Terms termsAggregation = resp.getAggregations().get("customerOrders");
+        Terms termsAggregation = response.getAggregations().get("customerOrders");
         assertNotNull(termsAggregation);
-        List<Terms.Bucket> buckets = termsAggregation.getBuckets();
+        List<? extends Terms.Bucket> buckets = termsAggregation.getBuckets();
         assertEquals(4, buckets.size());
 
         // Buckets should be ordered by count descending and then by key alphabetically
-
         assertEquals("Bob's Store", buckets.get(0).getKey());
         assertEquals(2, buckets.get(0).getDocCount());
 
@@ -104,77 +113,74 @@ public class CustomVariablesReportGeneratorIT {
     }
 
     @Test
-    public void testQuantitiesByMonthSearch() throws IOException, JSONException {
+    public void testQuantitiesByMonthSearch() throws Exception {
+        mockElasticSearchRequest(quantitiesByMonthJson);
 
-        createIndexAndRefresh();
-        addEntriesAndFlush(quantitiesByMonthJson);
+        SearchResponse response = reportGenerator.search(analyticsClient,
+                                                         indexManager,
+                                                         currentUser,
+                                                         reportGenerator.totalQuantityByMonthQuery());
 
-        SearchResponse resp = reportGenerator.executeTotalQuantityByMonthSearch(client, INDEX_NAME);
-
-        DateHistogram aggregation = resp.getAggregations().get("ordersByMonth");
+        ParsedDateHistogram aggregation = response.getAggregations().get("ordersByMonth");
         assertNotNull(aggregation);
-        List<? extends DateHistogram.Bucket> buckets = aggregation.getBuckets();
-        assertEquals(3, buckets.size());
+        List<? extends Histogram.Bucket> buckets = aggregation.getBuckets();
+        assertEquals(2, buckets.size());
 
         // Buckets should be ordered by month
-
-        assertEquals("2016-03", buckets.get(0).getKey());
+        assertEquals("2019-11-01T00:00Z", buckets.get(0).getKey().toString());
         assertEquals(2, buckets.get(0).getDocCount());
         assertEquals(33, ((Sum) buckets.get(0).getAggregations().get("totalItems")).getValue(), 0);
 
-        assertEquals("2016-04", buckets.get(1).getKey());
+        assertEquals("2019-12-01T00:00Z", buckets.get(1).getKey().toString());
         assertEquals(1, buckets.get(1).getDocCount());
         assertEquals(6, ((Sum) buckets.get(1).getAggregations().get("totalItems")).getValue(), 0);
-
-        assertEquals("2016-05", buckets.get(2).getKey());
-        assertEquals(2, buckets.get(2).getDocCount());
-        assertEquals(39, ((Sum) buckets.get(2).getAggregations().get("totalItems")).getValue(), 0);
     }
 
     @Test
-    public void testTotalOrdersByDueDateSearch() throws IOException, JSONException {
+    public void testTotalOrdersByDueDateSearch() throws Exception {
 
-        createIndexAndRefresh();
-        addEntriesAndFlush(ordersByDueDateJson);
+        mockElasticSearchRequest(ordersByDueDateJson);
 
-        SearchResponse resp = reportGenerator.executeTotalOrdersByDueDateSearch(client, INDEX_NAME);
+        SearchResponse response = reportGenerator.search(analyticsClient,
+                                                         indexManager,
+                                                         currentUser,
+                                                         reportGenerator.totalOrdersByDueDateQuery());
 
-        DateHistogram aggregation = resp.getAggregations().get("ordersByMonthDue");
+        ParsedDateHistogram aggregation = response.getAggregations().get("ordersByMonthDue");
         assertNotNull(aggregation);
-        List<? extends DateHistogram.Bucket> buckets = aggregation.getBuckets();
+        List<? extends Histogram.Bucket> buckets = aggregation.getBuckets();
         assertEquals(3, buckets.size());
 
         // Buckets should be ordered by month
+        assertEquals("2019-10-01T00:00Z", buckets.get(0).getKey().toString());
+        assertEquals(3, buckets.get(0).getDocCount());
 
-        assertEquals("2016-03", buckets.get(0).getKey());
-        assertEquals(2, buckets.get(0).getDocCount());
-
-        assertEquals("2016-04", buckets.get(1).getKey());
+        assertEquals("2019-11-01T00:00Z", buckets.get(1).getKey().toString());
         assertEquals(1, buckets.get(1).getDocCount());
 
-        assertEquals("2016-05", buckets.get(2).getKey());
-        assertEquals(2, buckets.get(2).getDocCount());
+        assertEquals("2019-12-01T00:00Z", buckets.get(2).getKey().toString());
+        assertEquals(1, buckets.get(2).getDocCount());
     }
 
     @Test
-    public void testNumOrdersByCustomerAndMonthSearch() throws IOException, JSONException {
+    public void testNumOrdersByCustomerAndMonthSearch() throws Exception {
+        mockElasticSearchRequest(variablesCountOrdersByCustomerAndMonthJson);
 
-        createIndexAndRefresh();
-        addEntriesAndFlush(customerOrdersJson);
+        SearchResponse response = reportGenerator.search(analyticsClient,
+                                                         indexManager,
+                                                         currentUser,
+                                                         reportGenerator.numOrdersByCustomerAndMonthQuery());
 
-        SearchResponse resp = reportGenerator.executeNumOrdersByCustomerAndMonthSearch(client, INDEX_NAME);
-
-        DateHistogram aggregation = resp.getAggregations().get("ordersByMonth");
+        ParsedDateHistogram aggregation = response.getAggregations().get("ordersByMonth");
         assertNotNull(aggregation);
-        List<? extends DateHistogram.Bucket> buckets = aggregation.getBuckets();
+        List<? extends Histogram.Bucket> buckets = aggregation.getBuckets();
         assertEquals(2, buckets.size());
 
         // Buckets should be ordered by month and within that by number of orders
-
-        assertEquals("2016-03", buckets.get(0).getKey());
+        assertEquals("2019-11-01T00:00Z", buckets.get(0).getKey().toString());
         assertEquals(3, buckets.get(0).getDocCount());
 
-        List<Terms.Bucket> marchTerms = ((Terms) buckets.get(0).getAggregations().get("customerName")).getBuckets();
+        List<? extends Terms.Bucket> marchTerms = ((Terms) buckets.get(0).getAggregations().get("customerName")).getBuckets();
         assertEquals(3, marchTerms.size());
         assertEquals("Anne", marchTerms.get(0).getKey());
         assertEquals(1, marchTerms.get(0).getDocCount());
@@ -183,10 +189,10 @@ public class CustomVariablesReportGeneratorIT {
         assertEquals("Charlie Brown", marchTerms.get(2).getKey());
         assertEquals(1, marchTerms.get(2).getDocCount());
 
-        assertEquals("2016-04", buckets.get(1).getKey());
-        assertEquals(3, buckets.get(1).getDocCount());
+        assertEquals("2019-12-01T00:00Z", buckets.get(1).getKey().toString());
+        assertEquals(2, buckets.get(1).getDocCount());
 
-        List<Terms.Bucket> aprilTerms = ((Terms) buckets.get(1).getAggregations().get("customerName")).getBuckets();
+        List<? extends Terms.Bucket> aprilTerms = ((Terms) buckets.get(1).getAggregations().get("customerName")).getBuckets();
         assertEquals(2, aprilTerms.size());
         assertEquals("Debbie Dolores", aprilTerms.get(0).getKey());
         assertEquals(2, aprilTerms.get(0).getDocCount());
@@ -194,47 +200,45 @@ public class CustomVariablesReportGeneratorIT {
         assertEquals(1, aprilTerms.get(1).getDocCount());
     }
 
-    @After
-    public void after() {
-        deleteIndex();
-        node.close();
+    private void mockElasticSearchRequest(Resource resource) throws Exception {
+        reset(httpClient);
+        doReturn(resourceAsHttpResponse(resource))
+                .when(httpClient)
+                .execute(any(HttpAsyncRequestProducer.class),
+                         any(HttpAsyncResponseConsumer.class),
+                         any(HttpContext.class),
+                         any(FutureCallback.class));
     }
 
-    protected void createIndexAndRefresh() throws IOException {
+    private Future<HttpResponse> resourceAsHttpResponse(Resource resource) throws Exception {
+        HttpEntity mockEntity = mock(HttpEntity.class);
+        doReturn(resource.getInputStream())
+                .when(mockEntity)
+                .getContent();
+        doReturn(new BasicHeader(CONTENT_TYPE, "application/json"))
+                .when(mockEntity)
+                .getContentType();
 
-        String variablesJson = new String(Files.readAllBytes(Paths.get(variablesMappingJson.getURI())));
-        client.admin().indices().prepareCreate(INDEX_NAME)
-                .addMapping(TYPE_VARIABLES, variablesJson)
+        StatusLine mockStatusLine = mock(StatusLine.class);
+        doReturn(200)
+                .when(mockStatusLine)
+                .getStatusCode();
+
+        HttpResponse mockResponse = mock(HttpResponse.class);
+        doReturn(mockStatusLine)
+                .when(mockResponse)
+                .getStatusLine();
+        doReturn(mockEntity)
+                .when(mockResponse)
+                .getEntity();
+        doReturn(new Header[0])
+                .when(mockResponse)
+                .getHeaders(eq(WARNING));
+
+        Future<HttpResponse> mockFuture = mock(Future.class);
+        doReturn(mockResponse)
+                .when(mockFuture)
                 .get();
-        client.admin().indices().refresh(new RefreshRequest(INDEX_NAME));
+        return mockFuture;
     }
-
-    protected void deleteIndex() {
-
-        DeleteIndexResponse delete = client.admin().indices().delete(new DeleteIndexRequest(INDEX_NAME)).actionGet();
-        if (!delete.isAcknowledged()) {
-            logger.error("Index wasn't deleted");
-        }
-    }
-
-    protected void addEntriesAndFlush(Resource jsonFile) throws IOException, JSONException {
-
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
-        JSONArray items = (JSONArray) new JSONTokener(new FileReader(jsonFile.getFile())).nextValue();
-
-        for (int i=0; i<items.length(); i++) {
-            bulkRequest.add(client
-                            .prepareIndex(INDEX_NAME, TYPE_VARIABLES, String.valueOf(i))
-                            .setSource(items.get(i).toString().getBytes())
-            );
-        }
-
-        BulkResponse bulkResponse = bulkRequest.get();
-        if (bulkResponse.hasFailures()) {
-            logger.warn("Bulk insert had failures");
-        }
-
-        client.admin().indices().flush(new FlushRequest(INDEX_NAME)).actionGet();
-    }
-
 }

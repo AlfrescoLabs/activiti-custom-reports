@@ -74,25 +74,49 @@
     ]
   },
   "aggregations": {
-    "sterms#customerOrders": {
-      "doc_count_error_upper_bound": 0,
-      "sum_other_doc_count": 0,
+    "date_histogram#ordersByMonth": {
       "buckets": [
         {
-          "key": "Bob's Store",
-          "doc_count": 2
+          "key_as_string": "yyyy-MM1572566400000",
+          "key": 1572566400000,
+          "doc_count": 3,
+          "sterms#customerName": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "Anne",
+                "doc_count": 1
+              },
+              {
+                "key": "Bob's Store",
+                "doc_count": 1
+              },
+              {
+                "key": "Charlie Brown",
+                "doc_count": 1
+              }
+            ]
+          }
         },
         {
-          "key": "Debbie Dolores",
-          "doc_count": 2
-        },
-        {
-          "key": "Anne",
-          "doc_count": 1
-        },
-        {
-          "key": "Charlie Brown",
-          "doc_count": 1
+          "key_as_string": "yyyy-MM1575158400000",
+          "key": 1575158400000,
+          "doc_count": 2,
+          "sterms#customerName": {
+            "doc_count_error_upper_bound": 0,
+            "sum_other_doc_count": 0,
+            "buckets": [
+              {
+                "key": "Debbie Dolores",
+                "doc_count": 2
+              },
+              {
+                "key": "Bob's Store",
+                "doc_count": 1
+              }
+            ]
+          }
         }
       ]
     }
