@@ -1,32 +1,101 @@
-[
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "quantity",
-    "longValue": 31,
-    "createTime": "2016-03-01"
+{
+  "took": 1,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
   },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "quantity",
-    "longValue": 2,
-    "createTime": "2016-03-02"
+  "hits": {
+    "total": {
+      "value": 5,
+      "relation": "eq"
+    },
+    "max_score": 1.8277829,
+    "hits": [
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "1.quantity",
+        "_score": 1.8277829,
+        "_source": {
+          "processDefinitionKey": "fruitorderprocess",
+          "name": "quantity",
+          "longValue": 31,
+          "createTime": "2016-03-01"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "2.quantity",
+        "_score": 1.8277829,
+        "_source": {
+          "processDefinitionKey": "fruitorderprocess",
+          "name": "quantity",
+          "longValue": 2,
+          "createTime": "2016-03-02"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "3.quantity",
+        "_score": 1.8277829,
+        "_source": {
+          "processDefinitionKey": "fruitorderprocess",
+          "name": "quantity",
+          "longValue": 6,
+          "createTime": "2016-04-26"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "4.quantity",
+        "_score": 1.8277829,
+        "_source": {
+          "processDefinitionKey": "fruitorderprocess",
+          "name": "quantity",
+          "longValue": 18,
+          "createTime": "2016-05-12"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "5.quantity",
+        "_score": 1.8277829,
+        "_source": {
+          "processDefinitionKey": "fruitorderprocess",
+          "name": "quantity",
+          "longValue": 21,
+          "createTime": "2016-05-13"
+        }
+      }
+    ]
   },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "quantity",
-    "longValue": 6,
-    "createTime": "2016-04-26"
-  },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "quantity",
-    "longValue": 18,
-    "createTime": "2016-05-12"
-  },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "quantity",
-    "longValue": 21,
-    "createTime": "2016-05-13"
+  "aggregations": {
+    "date_histogram#ordersByMonth": {
+      "buckets": [
+        {
+          "key_as_string": "yyyy-MM1572566400000",
+          "key": 1572566400000,
+          "doc_count": 2,
+          "sum#totalItems": {
+            "value": 33.0
+          }
+        },
+        {
+          "key_as_string": "yyyy-MM1575158400000",
+          "key": 1575158400000,
+          "doc_count": 1,
+          "sum#totalItems": {
+            "value": 6.0
+          }
+        }
+      ]
+    }
   }
-]
+}

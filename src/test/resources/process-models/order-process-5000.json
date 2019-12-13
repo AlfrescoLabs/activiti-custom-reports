@@ -6,7 +6,7 @@
     {
       "assignment": {
         "initiatorCanCompleteTask": true,
-        "type": "user"
+        "type": "initiator"
       },
       "dueAction": "none",
       "formDefinition": {

@@ -1,27 +1,135 @@
-[
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "duedate",
-    "dateValue": "2016-03-01"
+{
+  "took": 4,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
   },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "duedate",
-    "dateValue": "2016-03-02"
+  "hits": {
+    "total": {
+      "value": 5,
+      "relation": "eq"
+    },
+    "max_score": 1.8277829,
+    "hits": [
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "1.duedate",
+        "_score": 1.8277829,
+        "_source": {
+          "dateValue": 1574640000000,
+          "timeStamp": 1574688390451,
+          "processDefinitionId": "fruitorderprocess:1:4",
+          "processInstanceId": "2501",
+          "executionId": "2501",
+          "variableType": "date",
+          "createTime": 1574688390451,
+          "name": "duedate",
+          "tenantId": "user_1",
+          "userId": "1",
+          "processDefinitionKey": "fruitorderprocess"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "2.duedate",
+        "_score": 1.8277829,
+        "_source": {
+          "dateValue": 1572393600000,
+          "timeStamp": 1574778314701,
+          "processDefinitionId": "fruitorderprocess:1:4",
+          "processInstanceId": "17",
+          "executionId": "17",
+          "variableType": "date",
+          "createTime": 1574778311734,
+          "name": "duedate",
+          "tenantId": "user_1",
+          "userId": "1",
+          "processDefinitionKey": "fruitorderprocess"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "3.duedate",
+        "_score": 1.8277829,
+        "_source": {
+          "dateValue": 1571616000000,
+          "timeStamp": 1574780227110,
+          "processDefinitionId": "fruitorderprocess:1:4",
+          "processInstanceId": "41",
+          "executionId": "41",
+          "variableType": "date",
+          "createTime": 1574780224697,
+          "name": "duedate",
+          "tenantId": "user_1",
+          "userId": "1",
+          "processDefinitionKey": "fruitorderprocess"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "4.duedate",
+        "_score": 1.8277829,
+        "_source": {
+          "dateValue": 1571097600000,
+          "timeStamp": 1574780167415,
+          "processDefinitionId": "fruitorderprocess:1:4",
+          "processInstanceId": "29",
+          "executionId": "29",
+          "variableType": "date",
+          "createTime": 1574780164819,
+          "name": "duedate",
+          "tenantId": "user_1",
+          "userId": "1",
+          "processDefinitionKey": "fruitorderprocess"
+        }
+      },
+      {
+        "_index": "activiti-variables",
+        "_type": "_doc",
+        "_id": "5.duedate",
+        "_score": 1.8277829,
+        "_source": {
+          "dateValue": 1577750400000,
+          "timeStamp": 1576050196018,
+          "processDefinitionId": "fruitorderprocess:1:4",
+          "processInstanceId": "5",
+          "executionId": "5",
+          "variableType": "date",
+          "createTime": 1576050191773,
+          "name": "duedate",
+          "tenantId": "user_1",
+          "userId": "1",
+          "processDefinitionKey": "fruitorderprocess"
+        }
+      }
+    ]
   },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "duedate",
-    "dateValue": "2016-04-26"
-  },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "duedate",
-    "dateValue": "2016-05-12"
-  },
-  {
-    "processDefinitionKey": "fruitorderprocess",
-    "name": "duedate",
-    "dateValue": "2016-05-13"
+  "aggregations": {
+    "date_histogram#ordersByMonthDue": {
+      "buckets": [
+        {
+          "key_as_string": "yyyy-MM1569888000000",
+          "key": 1569888000000,
+          "doc_count": 3
+        },
+        {
+          "key_as_string": "yyyy-MM1572566400000",
+          "key": 1572566400000,
+          "doc_count": 1
+        },
+        {
+          "key_as_string": "yyyy-MM1575158400000",
+          "key": 1575158400000,
+          "doc_count": 1
+        }
+      ]
+    }
   }
-]
+}

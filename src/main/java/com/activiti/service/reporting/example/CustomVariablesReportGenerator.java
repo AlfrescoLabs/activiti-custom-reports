@@ -6,41 +6,47 @@
  */
 package com.activiti.service.reporting.example;
 
-import com.activiti.domain.reporting.MultiBarChart;
-import com.activiti.domain.reporting.ParametersDefinition;
-import com.activiti.domain.reporting.PieChartDataRepresentation;
-import com.activiti.domain.reporting.ReportDataRepresentation;
-import com.activiti.domain.reporting.SingleBarChartDataRepresentation;
+import com.activiti.domain.idm.User;
+import com.activiti.domain.reporting.*;
+import com.activiti.service.api.ReportingIndexManager;
 import com.activiti.service.api.UserCache;
-import com.activiti.service.reporting.AbstractReportGenerator;
-import com.activiti.service.reporting.ElasticSearchConstants;
 import com.activiti.service.reporting.converter.AggsToMultiSeriesChartConverter;
 import com.activiti.service.reporting.converter.AggsToSimpleChartBasicConverter;
 import com.activiti.service.reporting.converter.AggsToSimpleDateBasedChartBasicConverter;
 import com.activiti.service.reporting.converter.BucketExtractors;
+import com.activiti.service.reporting.generators.BaseReportGenerator;
+import com.activiti.service.reporting.searchClient.AnalyticsClient;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.activiti.engine.ProcessEngine;
+import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.index.query.FilterBuilders;
-import org.elasticsearch.index.query.FilteredQueryBuilder;
-import org.elasticsearch.index.query.MatchAllQueryBuilder;
-import org.elasticsearch.index.query.TermFilterBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.TermQueryBuilder;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
-import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogram;
+import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.util.Map;
+
+import static com.activiti.service.reporting.eventhandler.EventFields.PROCESS_DEFINITION_KEY;
+import static com.activiti.service.reporting.generators.ElasticSearchConstants.INDEX_VARIABLES;
 
 /**
  * @author Will Abson
  */
 @Component(CustomVariablesReportGenerator.ID)
-public class CustomVariablesReportGenerator extends AbstractReportGenerator {
+public class CustomVariablesReportGenerator extends BaseReportGenerator {
+
+    private static final Logger logger = LoggerFactory.getLogger(CustomVariablesReportGenerator.class);
 
     public static final String ID = "report.generator.fruitorders";
-    public static final String NAME = "Fruit orders overview";
 
-    private static String PROCESS_DEFINITION_KEY = "fruitorderprocess";
+    public static final String NAME = "Fruit orders overview";
 
     @Override
     public String getID() {
@@ -53,109 +59,135 @@ public class CustomVariablesReportGenerator extends AbstractReportGenerator {
     }
 
     @Override
-    public ParametersDefinition getParameterDefinitions(Map<String, Object> parameterValues) {
+    public String getTitleKey() {
+        return ID;
+    }
+
+    @Override
+    public String getType() {
+        return TYPE_REGULAR_REPORT;
+    }
+
+    @Override
+    public String getParameters(ObjectMapper objectMapper,
+                                Map<String, Object> parameterValues) {
+        ParametersDefinition parameters = getParameterDefinitions();
+        try {
+            return objectMapper.writeValueAsString(parameters);
+        } catch (JsonProcessingException e) {
+            logger.error("Could not serialise parameters data to JSON " + parameters, e);
+            return null;
+        }
+    }
+
+    public ParametersDefinition getParameterDefinitions() {
         return new ParametersDefinition();
     }
 
     @Override
-    public ReportDataRepresentation generateReportData(ProcessEngine processEngine,
-                                                       Client elasticSearchClient, String indexName, UserCache userCache,
-                                                       Map<String, Object> parameterMap) {
-
-        ReportDataRepresentation reportData = new ReportDataRepresentation();
+    public ReportDataRepresentation generate(ProcessEngine processEngine,
+                                             AnalyticsClient analyticsClient,
+                                             ReportingIndexManager indexManager,
+                                             User currentUser,
+                                             UserCache userCache,
+                                             ObjectMapper objectMapper,
+                                             Map<String, Object> map) {
 
         // Pie chart - orders by customer
-        SearchResponse customerNameResults = executeCustomerOrderCountsSearch(elasticSearchClient, indexName);
-        reportData.addReportDataElement(generateCustomerOrdersPieChart(customerNameResults));
+        SearchResponse customerNameResults = search(analyticsClient,
+                                                    indexManager,
+                                                    currentUser,
+                                                    customerOrderCountsQuery());
 
         // Bar chart - quantities ordered in each month
-        SearchResponse ordersByDateResults = executeTotalQuantityByMonthSearch(elasticSearchClient, indexName);
-        reportData.addReportDataElement(generateOrderQuantitiesByMonthChart(ordersByDateResults));
+        SearchResponse ordersByDateResults = search(analyticsClient,
+                                                    indexManager,
+                                                    currentUser,
+                                                    totalQuantityByMonthQuery());
 
         // Bar chart - num orders by due month
-        SearchResponse ordersByDueDate = executeTotalOrdersByDueDateSearch(elasticSearchClient, indexName);
-        reportData.addReportDataElement(generateOrdersByDueDateChart(ordersByDueDate));
+        SearchResponse ordersByDueDate = search(analyticsClient,
+                                                indexManager,
+                                                currentUser,
+                                                totalOrdersByDueDateQuery());
 
         // Bar chart - num orders by date placed grouped by customer
-        SearchResponse ordersPlacedByCustomer = executeNumOrdersByCustomerAndMonthSearch(elasticSearchClient, indexName);
+        SearchResponse ordersPlacedByCustomer = search(analyticsClient,
+                                                       indexManager,
+                                                       currentUser,
+                                                       numOrdersByCustomerAndMonthQuery());
+
+        ReportDataRepresentation reportData = new ReportDataRepresentation();
+        reportData.addReportDataElement(generateCustomerOrdersPieChart(customerNameResults));
+        reportData.addReportDataElement(generateOrderQuantitiesByMonthChart(ordersByDateResults));
+        reportData.addReportDataElement(generateOrdersByDueDateChart(ordersByDueDate));
         reportData.addReportDataElement(generateOrderQuantitiesByMonthAndCustomerChart(ordersPlacedByCustomer));
 
         return reportData;
     }
 
-    protected SearchResponse executeCustomerOrderCountsSearch(Client elasticSearchClient, String indexName) {
-
-        return executeSearch(elasticSearchClient,
-                indexName,
-                ElasticSearchConstants.TYPE_VARIABLES,
-                new FilteredQueryBuilder(
-                        new MatchAllQueryBuilder(),
-                        FilterBuilders.andFilter(
-                                new TermFilterBuilder("processDefinitionKey", PROCESS_DEFINITION_KEY),
-                                new TermFilterBuilder("name._exact_name", "customername")
-                        )
-                ),
-                AggregationBuilders.terms("customerOrders").field("stringValue._exact_string_value")
-        );
+    protected SearchSourceBuilder customerOrderCountsQuery() {
+        return new SearchSourceBuilder()
+                .query(QueryBuilders.boolQuery()
+                               .must(new TermQueryBuilder(PROCESS_DEFINITION_KEY, "fruitorderprocess"))
+                               .must(new TermQueryBuilder("name", "customername")))
+                .aggregation(AggregationBuilders
+                                     .terms("customerOrders")
+                                     .field("stringValue.keyword"));
     }
 
-    protected SearchResponse executeTotalQuantityByMonthSearch(Client elasticSearchClient, String indexName) {
-
-        return executeSearch(elasticSearchClient,
-                indexName,
-                ElasticSearchConstants.TYPE_VARIABLES,
-                new FilteredQueryBuilder(
-                        new MatchAllQueryBuilder(),
-                        FilterBuilders.andFilter(
-                                new TermFilterBuilder("processDefinitionKey", PROCESS_DEFINITION_KEY),
-                                new TermFilterBuilder("name._exact_name", "quantity")
-                        )
-                ),
-                AggregationBuilders.dateHistogram("ordersByMonth")
-                        .field("createTime")
-                        .format("yyyy-MM")
-                        .interval(DateHistogram.Interval.MONTH)
-                        .subAggregation(AggregationBuilders.sum("totalItems").field("longValue"))
-        );
+    protected SearchSourceBuilder totalQuantityByMonthQuery() {
+        return new SearchSourceBuilder()
+                .query(QueryBuilders.boolQuery()
+                               .must(new TermQueryBuilder(PROCESS_DEFINITION_KEY, "fruitorderprocess"))
+                               .must(new TermQueryBuilder("name", "quantity")))
+                .aggregation(AggregationBuilders.dateHistogram("ordersByMonth")
+                                     .field("createTime")
+                                     .format("yyyy-MM")
+                                     .calendarInterval(DateHistogramInterval.MONTH)
+                                     .subAggregation(AggregationBuilders
+                                                             .sum("totalItems")
+                                                             .field("longValue")));
     }
 
-    protected SearchResponse executeTotalOrdersByDueDateSearch(Client elasticSearchClient, String indexName) {
-
-        return executeSearch(elasticSearchClient,
-                indexName,
-                ElasticSearchConstants.TYPE_VARIABLES,
-                new FilteredQueryBuilder(
-                        new MatchAllQueryBuilder(),
-                        FilterBuilders.andFilter(
-                                new TermFilterBuilder("processDefinitionKey", PROCESS_DEFINITION_KEY),
-                                new TermFilterBuilder("name._exact_name", "duedate")
-                        )
-                ),
-                AggregationBuilders.dateHistogram("ordersByMonthDue")
-                        .field("dateValue")
-                        .format("yyyy-MM")
-                        .interval(DateHistogram.Interval.MONTH)
-        );
+    protected SearchSourceBuilder totalOrdersByDueDateQuery() {
+        return new SearchSourceBuilder()
+                .query(QueryBuilders.boolQuery()
+                               .must(new TermQueryBuilder(PROCESS_DEFINITION_KEY, "fruitorderprocess"))
+                               .must(new TermQueryBuilder("name", "duedate")))
+                .aggregation(AggregationBuilders.dateHistogram("ordersByMonthDue")
+                                     .field("dateValue")
+                                     .format("yyyy-MM")
+                                     .calendarInterval(DateHistogramInterval.MONTH));
     }
 
-    protected SearchResponse executeNumOrdersByCustomerAndMonthSearch(Client elasticSearchClient, String indexName) {
+    protected SearchSourceBuilder numOrdersByCustomerAndMonthQuery() {
+        return new SearchSourceBuilder()
+                .query(QueryBuilders.boolQuery()
+                               .must(new TermQueryBuilder(PROCESS_DEFINITION_KEY, "fruitorderprocess"))
+                               .must(new TermQueryBuilder("name", "customername")))
+                .aggregation(AggregationBuilders.dateHistogram("ordersByMonth")
+                                     .field("createTime")
+                                     .format("yyyy-MM")
+                                     .calendarInterval(DateHistogramInterval.MONTH)
+                                     .subAggregation(AggregationBuilders
+                                                             .terms("customerName")
+                                                             .field("stringValue.keyword")));
+    }
 
-        return executeSearch(elasticSearchClient,
-                indexName,
-                ElasticSearchConstants.TYPE_VARIABLES,
-                new FilteredQueryBuilder(
-                        new MatchAllQueryBuilder(),
-                        FilterBuilders.andFilter(
-                                new TermFilterBuilder("processDefinitionKey", PROCESS_DEFINITION_KEY),
-                                new TermFilterBuilder("name._exact_name", "customername")
-                        )
-                ),
-                AggregationBuilders.dateHistogram("ordersByMonth")
-                        .field("createTime")
-                        .format("yyyy-MM")
-                        .interval(DateHistogram.Interval.MONTH)
-                        .subAggregation(AggregationBuilders.terms("customerName").field("stringValue._exact_string_value"))
-        );
+    protected SearchResponse search(AnalyticsClient analyticsClient,
+                                    ReportingIndexManager indexManager,
+                                    User currentUser,
+                                    SearchSourceBuilder query) {
+        SearchRequest request = new SearchRequest(
+                indexManager.getIndexForUser(currentUser, INDEX_VARIABLES))
+                .source(query);
+        try {
+            return analyticsClient.search(request);
+        } catch (IOException e) {
+            logger.error("Error during elastic search", e);
+            return null;
+        }
     }
 
     protected PieChartDataRepresentation generateCustomerOrdersPieChart(SearchResponse searchResponse) {
@@ -223,5 +255,4 @@ public class CustomVariablesReportGenerator extends AbstractReportGenerator {
 
         return chart;
     }
-
 }
