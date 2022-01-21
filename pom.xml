@@ -20,7 +20,7 @@
         <!-- Libraries versions -->
         <activiti.app.version>1.10.0</activiti.app.version>
         <activiti.version>5.23.0.0</activiti.version>
-        <h2.version>1.3.176</h2.version>
+        <h2.version>2.1.210</h2.version>
         <spring.version>4.3.24.RELEASE</spring.version>
         <junit.version>4.12</junit.version>
         <mockito.version>1.10.19</mockito.version>
